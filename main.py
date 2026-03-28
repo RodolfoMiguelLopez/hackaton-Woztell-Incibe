@@ -100,7 +100,10 @@ async def webhook(request: Request):
         or data.get("link")
     )
 
-    # waMediaId para descarga en dos pasos (formato habitual de WhatsApp Cloud API)
+    # fileId interno de Woztell (formato real: {"type":"AUDIO","data":{"opus":true,"fileId":"..."}})
+    file_id = data.get("fileId")
+
+    # waMediaId como fallback
     wa_media_id = None
     attachments = data.get("attachments", [])
     if attachments:
@@ -108,7 +111,7 @@ async def webhook(request: Request):
         if first.get("type") in ("audio", "voice", "ptt"):
             wa_media_id = first.get("waMediaId") or first.get("id")
     if not wa_media_id:
-        wa_media_id = data.get("waMediaId") or data.get("id")
+        wa_media_id = data.get("waMediaId")
 
     button_payload = (
         data.get("interactive", {}).get("button_reply", {}).get("id")
@@ -119,7 +122,8 @@ async def webhook(request: Request):
     )
 
     is_audio = (
-        audio_url
+        file_id
+        or audio_url
         or wa_media_id
         or msg_type in ("AUDIO", "VOICE", "PTT")
         or (msg_type == "MISC" and attachments and attachments[0].get("type") in ("audio", "voice", "ptt"))
@@ -129,8 +133,8 @@ async def webhook(request: Request):
     if button_payload:
         await _handle_button(phone, button_payload)
     elif is_audio:
-        logger.info(f"[AUDIO] Detectado audio — url={audio_url} waMediaId={wa_media_id} (phone: {phone})")
-        transcribed = await transcribe_audio(audio_url=audio_url, wa_media_id=wa_media_id)
+        logger.info(f"[AUDIO] Detectado — fileId={file_id} url={audio_url} waMediaId={wa_media_id} (phone: {phone})")
+        transcribed = await transcribe_audio(audio_url=audio_url, wa_media_id=wa_media_id, file_id=file_id)
         logger.info(f"[AUDIO] Transcripción para {phone}: '{transcribed}'")
         if transcribed:
             await _handle_text(phone, transcribed)
