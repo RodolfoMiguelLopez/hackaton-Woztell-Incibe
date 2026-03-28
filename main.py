@@ -207,11 +207,11 @@ async def _mostrar_rutas(phone: str) -> None:
 
 async def _mostrar_eventos(phone: str) -> None:
     for evento in EVENTOS:
-        await send_image(phone, evento["imagen"], evento["detalle"])
-        await send_reply_buttons(
+        await send_reply_buttons_image(
             phone,
-            body=evento["nombre"],
-            footer="Pulsa si quieres saber cómo llegar",
+            image_url=evento["imagen"],
+            body=evento["detalle"],
+            title=evento["nombre"],
             buttons=[{"payload": evento["payload"], "title": evento["boton"]}],
         )
     await send_text(

@@ -74,14 +74,15 @@ async def send_reply_buttons_image(
     recipient: str,
     image_url: str,
     body: str,
-    footer: str,
+    title: str,
     buttons: list[dict],
 ) -> dict:
     """
-    Envía mensaje con imagen en cabecera y botones de respuesta (máx 3).
+    Envía card con imagen en cabecera, título, descripción y botones (máx 3).
+    Títulos de botones: máx 20 caracteres (límite WhatsApp).
     buttons: [{"payload": str, "title": str}, ...]
     """
-    logger.info(f"[WOZTELL] send_reply_buttons_image → {recipient} con imagen")
+    logger.info(f"[WOZTELL] send_reply_buttons_image → {recipient}: {title}")
     wa_buttons = [
         {"type": "reply", "reply": {"payload": b["payload"], "title": b["title"]}}
         for b in buttons
@@ -89,8 +90,7 @@ async def send_reply_buttons_image(
     response = {
         "type": "WHATSAPP_REPLY_BUTTONS",
         "header": {"type": "image", "image": {"link": image_url}},
-        "body": {"text": body},
-        "footer": {"text": footer},
+        "body": {"text": f"*{title}*\n\n{body}"},
         "action": {"buttons": wa_buttons},
     }
     return await send_message(recipient, [response])
