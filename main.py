@@ -2,13 +2,19 @@ import json
 import logging
 from datetime import datetime, timedelta
 from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
 
 import config
-from woztell import send_text, send_reply_buttons
+from woztell import send_text, send_reply_buttons, send_image, send_reply_buttons_image
 from ai_processor import detect_intent, generate_shopping_list, modify_list, INTENT_PURCHASE
 from audio_processor import transcribe_audio
 from conversation import get_state, set_state, get_lista, set_lista, reset
 from shopping_list import get_lista_completa, format_summary
+from actividades import (
+    RUTAS, EVENTOS,
+    detectar_tipo_actividad, detectar_eleccion_ruta, detectar_eleccion_evento,
+    evento_por_payload, msg_notif_familiar,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -17,6 +23,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Asistente de Compras WhatsApp")
+app.mount("/img", StaticFiles(directory="img"), name="img")
 
 # Almacena los últimos 10 payloads para debug
 _debug_payloads: list[dict] = []
@@ -189,6 +196,31 @@ async def webhook(request: Request):
     return {"ok": True}
 
 
+async def _mostrar_rutas(phone: str) -> None:
+    for ruta in RUTAS:
+        await send_image(phone, ruta["imagen"], ruta["caption"])
+    await send_text(
+        phone,
+        f"¿Cuál de las dos rutas te apetece, {config.NOMBRE_USUARIO}? Dímelo cuando quieras. 😊",
+    )
+
+
+async def _mostrar_eventos(phone: str) -> None:
+    for evento in EVENTOS:
+        await send_reply_buttons_image(
+            phone,
+            image_url=evento["imagen"],
+            body=evento["detalle"],
+            footer="Pulsa si quieres saber cómo llegar",
+            buttons=[{"payload": evento["payload"], "title": evento["boton"]}],
+        )
+    await send_text(
+        phone,
+        f"¿Cuál de estos planes te apetece, {config.NOMBRE_USUARIO}? "
+        "Dímelo y aviso a María en cuanto lo confirmes. 😊",
+    )
+
+
 async def _handle_text(phone: str, text: str) -> None:
     state = get_state(phone)["state"]
     logger.info(f"[{state}] → handle_text: '{text[:40]}' (phone: {phone})")
@@ -215,6 +247,58 @@ async def _handle_text(phone: str, text: str) -> None:
             buttons=BOTONES_CONFIRMACION,
         )
         logger.info(f"[MODIFYING] → AWAITING_CONFIRMATION (phone: {phone})")
+
+    elif state == "ACTIVIDADES_ELIGIENDO":
+        tipo = detectar_tipo_actividad(text)
+        if tipo == "PASEO":
+            await _mostrar_rutas(phone)
+            set_state(phone, "ACTIVIDADES_PASEO")
+            logger.info(f"[ACTIVIDADES_ELIGIENDO] → ACTIVIDADES_PASEO (phone: {phone})")
+        elif tipo == "EVENTO":
+            await _mostrar_eventos(phone)
+            set_state(phone, "ACTIVIDADES_EVENTO")
+            logger.info(f"[ACTIVIDADES_ELIGIENDO] → ACTIVIDADES_EVENTO (phone: {phone})")
+        else:
+            await send_text(
+                phone,
+                f"No te he entendido bien, {config.NOMBRE_USUARIO} 😊 "
+                "¿Prefieres un paseo por tu zona o ver qué eventos hay hoy cerca?",
+            )
+
+    elif state == "ACTIVIDADES_PASEO":
+        idx = detectar_eleccion_ruta(text)
+        if idx is not None:
+            ruta = RUTAS[idx]
+            await send_text(
+                phone,
+                f"¡Perfecto! Que disfrutes del paseo por {ruta['nombre']} 🚶‍♂️\n\n"
+                f"Aquí tienes cómo llegar:\n{ruta['maps']}",
+            )
+            await send_text(config.TELEFONO_FAMILIAR, msg_notif_familiar(ruta["notif_familiar"]))
+            reset(phone)
+            logger.info(f"[ACTIVIDADES_PASEO] → IDLE (ruta: {ruta['nombre']}) (phone: {phone})")
+        else:
+            await send_text(
+                phone,
+                f"No te he entendido bien, {config.NOMBRE_USUARIO} 😊 "
+                "¿Quieres ir al Parque Tierno Galván o al Centro Cultural Casa del Reloj?",
+            )
+
+    elif state == "ACTIVIDADES_EVENTO":
+        idx = detectar_eleccion_evento(text)
+        if idx is not None:
+            evento = EVENTOS[idx]
+            await send_text(phone, f"¡Genial! Que disfrutes de {evento['nombre']} 🎉")
+            await send_text(config.TELEFONO_FAMILIAR, msg_notif_familiar(evento["notif_familiar"]))
+            reset(phone)
+            logger.info(f"[ACTIVIDADES_EVENTO] → IDLE (evento: {evento['nombre']}) (phone: {phone})")
+        else:
+            await send_text(
+                phone,
+                f"No te he entendido bien, {config.NOMBRE_USUARIO} 😊 "
+                "¿Cuál de los planes te apetece? La exposición en el Matadero, "
+                "la charla en Las Doroteas o el concurso de bachata.",
+            )
 
     else:
         # AWAITING_CONFIRMATION recibe texto — ignorar, esperar botón
@@ -245,10 +329,14 @@ async def _handle_button(phone: str, payload: str) -> None:
         logger.info(f"[IDLE] → pendientes (phone: {phone})")
 
     elif payload == "OPCION_ACTIVIDADES":
-        from actividades import get_actividades_msg
-        await send_text(phone, get_actividades_msg(config.NOMBRE_USUARIO))
-        reset(phone)
-        logger.info(f"[IDLE] → actividades (phone: {phone})")
+        await send_text(
+            phone,
+            f"Hoy hace buena temperatura, {config.NOMBRE_USUARIO} 😊 ¿Qué te apetece?\n\n"
+            "Puedo prepararte un paseo por tu zona, o si prefieres te cuento qué eventos "
+            "hay hoy cerca. Dímelo cuando quieras.",
+        )
+        set_state(phone, "ACTIVIDADES_ELIGIENDO")
+        logger.info(f"[IDLE] → ACTIVIDADES_ELIGIENDO (phone: {phone})")
 
     elif payload == "CONFIRMAR_COMPRA" and state == "AWAITING_CONFIRMATION":
         fecha = _fecha_entrega()
@@ -286,6 +374,11 @@ async def _handle_button(phone: str, payload: str) -> None:
         )
         set_state(phone, "MODIFYING")
         logger.info(f"[AWAITING_CONFIRMATION] → MODIFYING (phone: {phone})")
+
+    elif payload in ("LLEGAR_MATADERO", "LLEGAR_DOROTEAS", "LLEGAR_PARAISO"):
+        evento = evento_por_payload(payload)
+        await send_text(phone, f"Aquí tienes cómo llegar a {evento['nombre']}:\n\n{evento['maps']}")
+        logger.info(f"[{state}] → directions {payload} (phone: {phone})")
 
     else:
         logger.warning(f"[{state}] payload inesperado: {payload} (phone: {phone})")

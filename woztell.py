@@ -39,6 +39,13 @@ async def send_text(recipient: str, text: str) -> dict:
     return await send_message(recipient, [{"type": "TEXT", "text": text}])
 
 
+async def send_image(recipient: str, url: str, caption: str = "") -> dict:
+    """Envía imagen con pie de foto opcional."""
+    logger.info(f"[WOZTELL] send_image → {recipient}: {url}")
+    response = {"type": "IMAGE", "url": url, "caption": caption}
+    return await send_message(recipient, [response])
+
+
 async def send_reply_buttons(
     recipient: str,
     body: str,
@@ -56,6 +63,32 @@ async def send_reply_buttons(
     ]
     response = {
         "type": "WHATSAPP_REPLY_BUTTONS",
+        "body": {"text": body},
+        "footer": {"text": footer},
+        "action": {"buttons": wa_buttons},
+    }
+    return await send_message(recipient, [response])
+
+
+async def send_reply_buttons_image(
+    recipient: str,
+    image_url: str,
+    body: str,
+    footer: str,
+    buttons: list[dict],
+) -> dict:
+    """
+    Envía mensaje con imagen en cabecera y botones de respuesta (máx 3).
+    buttons: [{"payload": str, "title": str}, ...]
+    """
+    logger.info(f"[WOZTELL] send_reply_buttons_image → {recipient} con imagen")
+    wa_buttons = [
+        {"type": "reply", "reply": {"payload": b["payload"], "title": b["title"]}}
+        for b in buttons
+    ]
+    response = {
+        "type": "WHATSAPP_REPLY_BUTTONS",
+        "header": {"type": "image", "image": {"link": image_url}},
         "body": {"text": body},
         "footer": {"text": footer},
         "action": {"buttons": wa_buttons},

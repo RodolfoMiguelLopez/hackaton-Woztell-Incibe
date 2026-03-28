@@ -13,3 +13,5 @@ NOMBRE_FAMILIAR = "María"
 USE_MOCK_AI = False
 WOZTELL_RETRY_DELAY_SECONDS = 1
 PORT = 8000
+
+BASE_URL = "https://hack-production-435a.up.railway.app"
