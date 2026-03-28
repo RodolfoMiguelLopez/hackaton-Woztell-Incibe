@@ -49,6 +49,37 @@ async def debug_payloads():
     return {"payloads": _debug_payloads}
 
 
+@app.get("/debug/file/{file_id}")
+async def debug_file(file_id: str):
+    """Prueba la descarga de un fichero de Woztell por fileId — diagnóstico."""
+    import httpx
+    headers = {"Authorization": f"Bearer {config.WOZTELL_ACCESS_TOKEN}"}
+    results = {}
+
+    async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+        # REST
+        for url_tpl in [
+            "https://open.api.woztell.com/file/{id}",
+            "https://bot.api.woztell.com/file/{id}",
+        ]:
+            url = url_tpl.format(id=file_id)
+            try:
+                r = await client.get(url, headers=headers)
+                results[url] = {"status": r.status_code, "bytes": len(r.content), "body": r.text[:200]}
+            except Exception as e:
+                results[url] = {"error": str(e)}
+
+        # GraphQL
+        gql = '{ apiViewer { file(fileId: "%s") { url } } }' % file_id
+        try:
+            r = await client.post("https://open.api.woztell.com/v3", json={"query": gql}, headers=headers)
+            results["graphql"] = r.json()
+        except Exception as e:
+            results["graphql"] = {"error": str(e)}
+
+    return results
+
+
 @app.post("/make/trigger")
 async def make_trigger(request: Request):
     """Stub para futura integración con Make como orquestador."""
