@@ -3,15 +3,19 @@ import config
 RUTAS = [
     {
         "nombre": "Parque Enrique Tierno Galván",
+        "detalle": "🌳 Paseo al Parque Enrique Tierno Galván\n🚶 Aprox. 25 min desde Digitaliza Madrid",
         "imagen": f"{config.BASE_URL}/img/tierno.jpeg",
-        "caption": "¿Quieres ir al Parque Enrique Tierno Galván? 🌳",
+        "payload": "LLEGAR_TIERNO",
+        "boton": "📍 Cómo llegar",
         "maps": "https://www.google.com/maps/dir/Digitaliza+Madrid+(Centro+de+Innovaci%C3%B3n),+C.+de+Embajadores,+181,+Arganzuela,+28045+Madrid/Parque+Enrique+Tierno+Galv%C3%A1n,+C.+Meneses,+4,+Arganzuela,+28045+Madrid/@40.3902849,-3.6924029,16z/data=!3m1!4b1!4m14!4m13!1m5!1m1!1s0xd42270071e3f609:0x9c42615f48ee6bba!2m2!1d-3.6928904!2d40.3915483!1m5!1m1!1s0xd421ebc25594ceb:0xc35b94645b458ce6!2m2!1d-3.6838406!2d40.3900397!3e0",
         "notif_familiar": f"{config.NOMBRE_USUARIO} ha decidido dar un paseo al Parque Enrique Tierno Galván.",
     },
     {
         "nombre": "Centro Cultural Casa del Reloj",
+        "detalle": "🏛️ Paseo al Centro Cultural Casa del Reloj\n🚶 Aprox. 10 min desde Digitaliza Madrid",
         "imagen": f"{config.BASE_URL}/img/centro.jpeg",
-        "caption": "¿O prefieres la zona del Centro Cultural Casa del Reloj? 🏛️",
+        "payload": "LLEGAR_CENTRO",
+        "boton": "📍 Cómo llegar",
         "maps": "https://www.google.com/maps/dir/Digitaliza+Madrid+(Centro+de+Innovaci%C3%B3n),+C.+de+Embajadores,+181,+Arganzuela,+28045+Madrid/Centro+Cultural+Casa+del+Reloj,+P.%C2%BA+de+la+Chopera,+6-10,+Arganzuela,+28028+Madrid/@40.3930412,-3.6972613,18z/data=!3m1!4b1!4m14!4m13!1m5!1m1!1s0xd42270071e3f609:0x9c42615f48ee6bba!2m2!1d-3.6928904!2d40.3915483!1m5!1m1!1s0xd4228ad28385a43:0x59f641b81d35e0b7!2m2!1d-3.6990868!2d40.392798!3e0",
         "notif_familiar": f"{config.NOMBRE_USUARIO} ha decidido pasear hacia el Centro Cultural Casa del Reloj.",
     },
@@ -20,7 +24,7 @@ RUTAS = [
 EVENTOS = [
     {
         "nombre": "Exposición Nuevas Cleopatra",
-        "detalle": "🎨 *Exposición Nuevas Cleopatra* en Matadero Madrid\n🕔 Hoy de 17:00 a 21:00",
+        "detalle": "🎨 Exposición en Matadero Madrid\n🕔 Hoy de 17:00 a 21:00",
         "imagen": f"{config.BASE_URL}/img/expo.jpeg",
         "payload": "LLEGAR_MATADERO",
         "boton": "📍 Cómo llegar",
@@ -29,7 +33,7 @@ EVENTOS = [
     },
     {
         "nombre": "Charla sobre Conciencia",
-        "detalle": "🎤 *Charla sobre Conciencia*\n🕛 Hoy a las 12:00 · Centro Cultural Las Doroteas",
+        "detalle": "🎤 Charla sobre Conciencia\n🕛 Hoy a las 12:00 · Centro Cultural Las Doroteas",
         "imagen": f"{config.BASE_URL}/img/charla.jpeg",
         "payload": "LLEGAR_DOROTEAS",
         "boton": "📍 Cómo llegar",
@@ -38,7 +42,7 @@ EVENTOS = [
     },
     {
         "nombre": "Concurso de Bachata",
-        "detalle": "💃 *Concurso de Bachata*\nDiscoteca Paraíso · Esta noche hasta las 00:00",
+        "detalle": "💃 Concurso de Bachata\nDiscoteca Paraíso · Esta noche hasta las 00:00",
         "imagen": f"{config.BASE_URL}/img/disco.jpg",
         "payload": "LLEGAR_PARAISO",
         "boton": "📍 Cómo llegar",
@@ -62,7 +66,8 @@ _KW_EVENTOS = [
     ["bachata", "disco", "paraíso", "paraiso", "tercera", "tercero", "baile", "discoteca"],
 ]
 
-_PAYLOAD_TO_IDX = {"LLEGAR_MATADERO": 0, "LLEGAR_DOROTEAS": 1, "LLEGAR_PARAISO": 2}
+_PAYLOAD_TO_RUTA = {"LLEGAR_TIERNO": 0, "LLEGAR_CENTRO": 1}
+_PAYLOAD_TO_EVENTO = {"LLEGAR_MATADERO": 0, "LLEGAR_DOROTEAS": 1, "LLEGAR_PARAISO": 2}
 
 
 def detectar_tipo_actividad(text: str) -> str:
@@ -90,8 +95,13 @@ def detectar_eleccion_evento(text: str) -> int | None:
     return None
 
 
+def ruta_por_payload(payload: str) -> dict | None:
+    idx = _PAYLOAD_TO_RUTA.get(payload)
+    return RUTAS[idx] if idx is not None else None
+
+
 def evento_por_payload(payload: str) -> dict | None:
-    idx = _PAYLOAD_TO_IDX.get(payload)
+    idx = _PAYLOAD_TO_EVENTO.get(payload)
     return EVENTOS[idx] if idx is not None else None
 
 

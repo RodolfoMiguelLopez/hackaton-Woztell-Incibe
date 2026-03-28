@@ -13,7 +13,7 @@ from shopping_list import get_lista_completa, format_summary
 from actividades import (
     RUTAS, EVENTOS,
     detectar_tipo_actividad, detectar_eleccion_ruta, detectar_eleccion_evento,
-    evento_por_payload, msg_notif_familiar,
+    ruta_por_payload, evento_por_payload, msg_notif_familiar,
 )
 
 logging.basicConfig(
@@ -198,10 +198,16 @@ async def webhook(request: Request):
 
 async def _mostrar_rutas(phone: str) -> None:
     for ruta in RUTAS:
-        await send_image(phone, ruta["imagen"], ruta["caption"])
+        await send_reply_buttons_image(
+            phone,
+            image_url=ruta["imagen"],
+            body=ruta["detalle"],
+            title=ruta["nombre"],
+            buttons=[{"payload": ruta["payload"], "title": ruta["boton"]}],
+        )
     await send_text(
         phone,
-        f"¿Cuál de las dos rutas te apetece, {config.NOMBRE_USUARIO}? Dímelo cuando quieras. 😊",
+        f"¿Cuál de las dos rutas te apetece, {config.NOMBRE_USUARIO}? 😊",
     )
 
 
@@ -373,6 +379,13 @@ async def _handle_button(phone: str, payload: str) -> None:
         )
         set_state(phone, "MODIFYING")
         logger.info(f"[AWAITING_CONFIRMATION] → MODIFYING (phone: {phone})")
+
+    elif payload in ("LLEGAR_TIERNO", "LLEGAR_CENTRO"):
+        ruta = ruta_por_payload(payload)
+        await send_text(phone, f"Aquí tienes cómo llegar al {ruta['nombre']}:\n\n{ruta['maps']}")
+        await send_text(config.TELEFONO_FAMILIAR, msg_notif_familiar(ruta["notif_familiar"]))
+        reset(phone)
+        logger.info(f"[{state}] → ruta confirmada {payload} (phone: {phone})")
 
     elif payload in ("LLEGAR_MATADERO", "LLEGAR_DOROTEAS", "LLEGAR_PARAISO"):
         evento = evento_por_payload(payload)
