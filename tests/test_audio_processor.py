@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from audio_processor import transcribe_audio
 
 
-async def test_transcribe_audio_retorna_texto():
+async def test_transcribe_audio_con_url_retorna_texto():
     mock_http_response = MagicMock()
     mock_http_response.content = b"fake ogg audio bytes"
     mock_http_response.raise_for_status = MagicMock()
@@ -21,7 +21,7 @@ async def test_transcribe_audio_retorna_texto():
         mock_client_class.return_value = mock_client
         mock_whisper.return_value = mock_transcription
 
-        result = await transcribe_audio("https://fake-url/audio.ogg")
+        result = await transcribe_audio(audio_url="https://fake-url/audio.ogg")
         assert result == "quiero hacer la compra"
 
 
@@ -33,5 +33,10 @@ async def test_transcribe_audio_devuelve_vacio_si_falla():
         mock_client.get = AsyncMock(side_effect=Exception("network error"))
         mock_client_class.return_value = mock_client
 
-        result = await transcribe_audio("https://fake-url/audio.ogg")
+        result = await transcribe_audio(audio_url="https://fake-url/audio.ogg")
         assert result == ""
+
+
+async def test_transcribe_audio_sin_url_ni_media_id_retorna_vacio():
+    result = await transcribe_audio(audio_url=None, wa_media_id=None)
+    assert result == ""

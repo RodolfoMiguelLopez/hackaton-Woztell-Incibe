@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Asistente de Compras WhatsApp")
 
+# Almacena los últimos 10 payloads para debug
+_debug_payloads: list[dict] = []
+
 BOTONES_CONFIRMACION = [
     {"payload": "CONFIRMAR_COMPRA", "title": "✅ Confirmar"},
     {"payload": "MODIFICAR_COMPRA", "title": "✏️ Modificar"},
@@ -40,6 +43,12 @@ async def health():
     return {"status": "ok"}
 
 
+@app.get("/debug/payloads")
+async def debug_payloads():
+    """Devuelve los últimos payloads recibidos — útil para ver qué manda Woztell."""
+    return {"payloads": _debug_payloads}
+
+
 @app.post("/make/trigger")
 async def make_trigger(request: Request):
     """Stub para futura integración con Make como orquestador."""
@@ -53,6 +62,16 @@ async def webhook(request: Request):
     body = await request.json()
     logger.info(f"[WEBHOOK] Payload: {json.dumps(body)}")
 
+    # Guardar para debug
+    _debug_payloads.append(body)
+    if len(_debug_payloads) > 10:
+        _debug_payloads.pop(0)
+
+    # Ignorar eventos de estado (confirmaciones de entrega de mensajes nuestros)
+    if body.get("type", "").upper() in ("SENT", "DELIVERED", "READ", "FAILED"):
+        logger.info(f"[WEBHOOK] Evento de estado '{body.get('type')}' — ignorando")
+        return {"ok": True}
+
     # --- Parsing defensivo ---
     phone = (
         body.get("from")
@@ -64,34 +83,54 @@ async def webhook(request: Request):
         return {"ok": True}
 
     msg_type = body.get("type", "").upper()
+    data = body.get("data", {})
 
     text = (
-        body.get("data", {}).get("text")
+        data.get("text")
         or body.get("text")
         or body.get("message", {}).get("text")
-        or body.get("data", {}).get("body")
+        or data.get("body")
     )
 
+    # URL directa del audio (si Woztell la manda)
     audio_url = (
-        body.get("data", {}).get("url")
-        or body.get("data", {}).get("audio", {}).get("url")
-        or body.get("data", {}).get("voice", {}).get("url")
-        or body.get("data", {}).get("link")
+        data.get("url")
+        or data.get("audio", {}).get("url")
+        or data.get("voice", {}).get("url")
+        or data.get("link")
     )
+
+    # waMediaId para descarga en dos pasos (formato habitual de WhatsApp Cloud API)
+    wa_media_id = None
+    attachments = data.get("attachments", [])
+    if attachments:
+        first = attachments[0]
+        if first.get("type") in ("audio", "voice", "ptt"):
+            wa_media_id = first.get("waMediaId") or first.get("id")
+    if not wa_media_id:
+        wa_media_id = data.get("waMediaId") or data.get("id")
 
     button_payload = (
-        body.get("data", {}).get("interactive", {}).get("button_reply", {}).get("id")
-        or body.get("data", {}).get("payload")
-        or body.get("data", {}).get("button_reply", {}).get("id")
+        data.get("interactive", {}).get("button_reply", {}).get("id")
+        or data.get("payload")
+        or data.get("button_reply", {}).get("id")
         or body.get("payload")
         or body.get("postback", {}).get("payload")
+    )
+
+    is_audio = (
+        audio_url
+        or wa_media_id
+        or msg_type in ("AUDIO", "VOICE", "PTT")
+        or (msg_type == "MISC" and attachments and attachments[0].get("type") in ("audio", "voice", "ptt"))
     )
 
     # --- Enrutamiento ---
     if button_payload:
         await _handle_button(phone, button_payload)
-    elif audio_url or msg_type in ("AUDIO", "VOICE"):
-        transcribed = await transcribe_audio(audio_url or "")
+    elif is_audio:
+        logger.info(f"[AUDIO] Detectado audio — url={audio_url} waMediaId={wa_media_id} (phone: {phone})")
+        transcribed = await transcribe_audio(audio_url=audio_url, wa_media_id=wa_media_id)
         logger.info(f"[AUDIO] Transcripción para {phone}: '{transcribed}'")
         if transcribed:
             await _handle_text(phone, transcribed)
