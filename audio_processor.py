@@ -35,16 +35,20 @@ async def _download_by_file_id(file_id: str) -> bytes | None:
     headers = {"Authorization": f"Bearer {config.WOZTELL_ACCESS_TOKEN}"}
     async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
 
-        # 1. Intentar endpoints REST
+        # 1. Intentar endpoints REST — con Bearer header Y con ?accessToken= como query param
         for endpoint in _FILE_ENDPOINTS:
             url = endpoint.format(file_id=file_id)
-            try:
-                resp = await client.get(url, headers=headers)
-                logger.info(f"[AUDIO] REST {url} → {resp.status_code} ({len(resp.content)} bytes)")
-                if resp.status_code == 200 and len(resp.content) > 100:
-                    return resp.content
-            except Exception as e:
-                logger.warning(f"[AUDIO] REST {url} error: {e}")
+            for attempt_headers, params in [
+                (headers, {}),
+                ({}, {"accessToken": config.WOZTELL_ACCESS_TOKEN}),
+            ]:
+                try:
+                    resp = await client.get(url, headers=attempt_headers, params=params)
+                    logger.info(f"[AUDIO] REST {url} params={list(params.keys())} → {resp.status_code} ({len(resp.content)} bytes)")
+                    if resp.status_code == 200 and len(resp.content) > 100:
+                        return resp.content
+                except Exception as e:
+                    logger.warning(f"[AUDIO] REST {url} error: {e}")
 
         # 2. Intentar GraphQL para obtener URL y luego descargar
         for query_name, query in _GQL_QUERIES:
