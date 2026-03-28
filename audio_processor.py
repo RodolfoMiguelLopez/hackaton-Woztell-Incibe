@@ -9,31 +9,65 @@ logger = logging.getLogger(__name__)
 
 openai_client = AsyncOpenAI(api_key=config.OPENAI_API_KEY)
 
-# Posibles endpoints de descarga de ficheros de Woztell (se prueban en orden)
+# Posibles endpoints REST de descarga de ficheros de Woztell (se prueban en orden)
 _FILE_ENDPOINTS = [
     "https://open.api.woztell.com/file/{file_id}",
     "https://bot.api.woztell.com/file/{file_id}",
     "https://open.api.woztell.com/v3/file/{file_id}",
+    "https://open.api.woztell.com/files/{file_id}",
+    "https://open.api.woztell.com/media/{file_id}",
+]
+
+# Posibles queries GraphQL para obtener URL del fichero
+_GQL_QUERIES = [
+    ("getAttachment",  'query($id:String!){getAttachment(fileId:$id){url mimeType}}'),
+    ("getFile",        'query($id:String!){getFile(fileId:$id){url}}'),
+    ("getInboundFile", 'query($id:String!){getInboundFile(fileId:$id){url}}'),
+    ("file",           'query($id:String!){file(id:$id){url}}'),
 ]
 
 
 async def _download_by_file_id(file_id: str) -> bytes | None:
     """
     Descarga el contenido binario de un fichero usando el fileId interno de Woztell.
-    Prueba varios endpoints hasta encontrar uno que funcione.
+    Prueba REST endpoints y luego GraphQL hasta encontrar uno que funcione.
     """
     headers = {"Authorization": f"Bearer {config.WOZTELL_ACCESS_TOKEN}"}
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+
+        # 1. Intentar endpoints REST
         for endpoint in _FILE_ENDPOINTS:
             url = endpoint.format(file_id=file_id)
             try:
                 resp = await client.get(url, headers=headers)
-                logger.info(f"[AUDIO] {url} → status {resp.status_code}")
+                logger.info(f"[AUDIO] REST {url} → {resp.status_code} ({len(resp.content)} bytes)")
                 if resp.status_code == 200 and len(resp.content) > 100:
-                    logger.info(f"[AUDIO] Descargados {len(resp.content)} bytes desde {url}")
                     return resp.content
             except Exception as e:
-                logger.warning(f"[AUDIO] Error en {url}: {e}")
+                logger.warning(f"[AUDIO] REST {url} error: {e}")
+
+        # 2. Intentar GraphQL para obtener URL y luego descargar
+        for query_name, query in _GQL_QUERIES:
+            try:
+                resp = await client.post(
+                    "https://open.api.woztell.com/v3",
+                    json={"query": query, "variables": {"id": file_id}},
+                    headers=headers,
+                )
+                data = resp.json()
+                logger.info(f"[AUDIO] GraphQL {query_name} → {data}")
+                file_url = (
+                    data.get("data", {}).get(query_name, {}) or {}
+                ).get("url")
+                if file_url:
+                    dl = await client.get(file_url, headers=headers)
+                    if dl.status_code == 200 and len(dl.content) > 100:
+                        logger.info(f"[AUDIO] Descargados {len(dl.content)} bytes via GraphQL {query_name}")
+                        return dl.content
+            except Exception as e:
+                logger.warning(f"[AUDIO] GraphQL {query_name} error: {e}")
+
+    logger.error(f"[AUDIO] Todos los métodos fallaron para fileId={file_id}")
     return None
 
 
