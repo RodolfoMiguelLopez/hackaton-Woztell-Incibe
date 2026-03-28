@@ -216,8 +216,7 @@ async def _mostrar_eventos(phone: str) -> None:
         )
     await send_text(
         phone,
-        f"¿Cuál de estos planes te apetece, {config.NOMBRE_USUARIO}? "
-        "Dímelo y aviso a María en cuanto lo confirmes. 😊",
+        f"¿Cuál de estos planes te apetece, {config.NOMBRE_USUARIO}? 😊",
     )
 
 
