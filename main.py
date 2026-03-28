@@ -21,6 +21,12 @@ app = FastAPI(title="Asistente de Compras WhatsApp")
 # Almacena los últimos 10 payloads para debug
 _debug_payloads: list[dict] = []
 
+BOTONES_MENU = [
+    {"payload": "OPCION_COMPRA",       "title": "🛒 Hacer la compra"},
+    {"payload": "OPCION_PENDIENTES",   "title": "📋 Cosas pendientes"},
+    {"payload": "OPCION_ACTIVIDADES",  "title": "💡 Qué hacer hoy"},
+]
+
 BOTONES_CONFIRMACION = [
     {"payload": "CONFIRMAR_COMPRA", "title": "✅ Confirmar"},
     {"payload": "MODIFICAR_COMPRA", "title": "✏️ Modificar"},
@@ -188,26 +194,13 @@ async def _handle_text(phone: str, text: str) -> None:
     logger.info(f"[{state}] → handle_text: '{text[:40]}' (phone: {phone})")
 
     if state == "IDLE":
-        intent = await detect_intent(text)
-        logger.info(f"[{state}] → detect_intent → {intent} (phone: {phone})")
-        if intent == INTENT_PURCHASE:
-            lista = await generate_shopping_list(text, get_lista_completa())
-            set_lista(phone, lista)
-            set_state(phone, "AWAITING_CONFIRMATION")
-            summary = format_summary(lista)
-            await send_reply_buttons(
-                phone,
-                body=f"¡Hola {config.NOMBRE_USUARIO}! 😊 Aquí está tu lista habitual:\n\n{summary}",
-                footer="¿Quieres confirmar este pedido?",
-                buttons=BOTONES_CONFIRMACION,
-            )
-            logger.info(f"[IDLE] → AWAITING_CONFIRMATION (phone: {phone})")
-        else:
-            await send_text(
-                phone,
-                f"¡Hola {config.NOMBRE_USUARIO}! 😊 Puedo ayudarte a hacer la compra. "
-                "Dime cuándo quieras empezar.",
-            )
+        await send_reply_buttons(
+            phone,
+            body=f"¡Hola {config.NOMBRE_USUARIO}! 😊 ¿En qué puedo ayudarte hoy?",
+            footer="Elige una opción",
+            buttons=BOTONES_MENU,
+        )
+        logger.info(f"[IDLE] → menú enviado (phone: {phone})")
 
     elif state == "MODIFYING":
         lista_actual = get_lista(phone)
@@ -232,7 +225,32 @@ async def _handle_button(phone: str, payload: str) -> None:
     state = get_state(phone)["state"]
     logger.info(f"[{state}] → button: {payload} (phone: {phone})")
 
-    if payload == "CONFIRMAR_COMPRA" and state == "AWAITING_CONFIRMATION":
+    if payload == "OPCION_COMPRA":
+        lista = await generate_shopping_list("hacer la compra", get_lista_completa())
+        set_lista(phone, lista)
+        set_state(phone, "AWAITING_CONFIRMATION")
+        summary = format_summary(lista)
+        await send_reply_buttons(
+            phone,
+            body=f"¡Aquí está tu lista habitual, {config.NOMBRE_USUARIO}! 😊\n\n{summary}",
+            footer="¿Quieres confirmar este pedido?",
+            buttons=BOTONES_CONFIRMACION,
+        )
+        logger.info(f"[IDLE] → AWAITING_CONFIRMATION via menú (phone: {phone})")
+
+    elif payload == "OPCION_PENDIENTES":
+        from pendientes import get_pendientes_msg
+        await send_text(phone, get_pendientes_msg(config.NOMBRE_USUARIO))
+        reset(phone)
+        logger.info(f"[IDLE] → pendientes (phone: {phone})")
+
+    elif payload == "OPCION_ACTIVIDADES":
+        from actividades import get_actividades_msg
+        await send_text(phone, get_actividades_msg(config.NOMBRE_USUARIO))
+        reset(phone)
+        logger.info(f"[IDLE] → actividades (phone: {phone})")
+
+    elif payload == "CONFIRMAR_COMPRA" and state == "AWAITING_CONFIRMATION":
         fecha = _fecha_entrega()
         msg_usuario = (
             f"¡Perfecto, {config.NOMBRE_USUARIO}! 🛒 Tu pedido está confirmado.\n"
