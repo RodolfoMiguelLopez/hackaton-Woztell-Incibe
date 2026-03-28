@@ -18,19 +18,10 @@ _FILE_ENDPOINTS = [
     "https://open.api.woztell.com/media/{file_id}",
 ]
 
-# Posibles queries GraphQL para obtener URL del fichero
-_GQL_QUERIES = [
-    ("getAttachment",  'query($id:String!){getAttachment(fileId:$id){url mimeType}}'),
-    ("getFile",        'query($id:String!){getFile(fileId:$id){url}}'),
-    ("getInboundFile", 'query($id:String!){getInboundFile(fileId:$id){url}}'),
-    ("file",           'query($id:String!){file(id:$id){url}}'),
-]
-
-
 async def _download_by_file_id(file_id: str) -> bytes | None:
     """
     Descarga el contenido binario de un fichero usando el fileId interno de Woztell.
-    Prueba REST endpoints y luego GraphQL hasta encontrar uno que funcione.
+    Prueba REST endpoints y luego GraphQL (apiViewer.file) hasta encontrar uno que funcione.
     """
     headers = {"Authorization": f"Bearer {config.WOZTELL_ACCESS_TOKEN}"}
     async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
@@ -50,26 +41,27 @@ async def _download_by_file_id(file_id: str) -> bytes | None:
                 except Exception as e:
                     logger.warning(f"[AUDIO] REST {url} error: {e}")
 
-        # 2. Intentar GraphQL para obtener URL y luego descargar
-        for query_name, query in _GQL_QUERIES:
-            try:
-                resp = await client.post(
-                    "https://open.api.woztell.com/v3",
-                    json={"query": query, "variables": {"id": file_id}},
-                    headers=headers,
-                )
-                data = resp.json()
-                logger.info(f"[AUDIO] GraphQL {query_name} → {data}")
-                file_url = (
-                    data.get("data", {}).get(query_name, {}) or {}
-                ).get("url")
-                if file_url:
-                    dl = await client.get(file_url, headers=headers)
-                    if dl.status_code == 200 and len(dl.content) > 100:
-                        logger.info(f"[AUDIO] Descargados {len(dl.content)} bytes via GraphQL {query_name}")
-                        return dl.content
-            except Exception as e:
-                logger.warning(f"[AUDIO] GraphQL {query_name} error: {e}")
+        # 2. GraphQL via apiViewer (estructura correcta según schema de Woztell)
+        gql_query = '{ apiViewer { file(fileId: "%s") { url originalUrl } } }' % file_id
+        try:
+            resp = await client.post(
+                "https://open.api.woztell.com/v3",
+                json={"query": gql_query},
+                headers=headers,
+            )
+            data = resp.json()
+            logger.info(f"[AUDIO] GraphQL apiViewer.file → {data}")
+            file_node = (data.get("data", {}).get("apiViewer", {}) or {}).get("file") or {}
+            file_url = file_node.get("url") or file_node.get("originalUrl")
+            if file_url:
+                dl = await client.get(file_url, headers=headers)
+                if dl.status_code == 200 and len(dl.content) > 100:
+                    logger.info(f"[AUDIO] Descargados {len(dl.content)} bytes via GraphQL apiViewer.file")
+                    return dl.content
+                else:
+                    logger.warning(f"[AUDIO] Descarga de file_url falló: {dl.status_code} ({len(dl.content)} bytes)")
+        except Exception as e:
+            logger.warning(f"[AUDIO] GraphQL apiViewer.file error: {e}")
 
     logger.error(f"[AUDIO] Todos los métodos fallaron para fileId={file_id}")
     return None
