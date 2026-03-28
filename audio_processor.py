@@ -54,12 +54,13 @@ async def _download_by_file_id(file_id: str) -> bytes | None:
             file_node = (data.get("data", {}).get("apiViewer", {}) or {}).get("file") or {}
             file_url = file_node.get("url")
             if file_url:
-                dl = await client.get(file_url, headers=headers)
+                # URL de S3 pre-firmada — no enviar Authorization (S3 la rechaza)
+                dl = await client.get(file_url)
                 if dl.status_code == 200 and len(dl.content) > 100:
                     logger.info(f"[AUDIO] Descargados {len(dl.content)} bytes via GraphQL apiViewer.file")
                     return dl.content
                 else:
-                    logger.warning(f"[AUDIO] Descarga de file_url falló: {dl.status_code} ({len(dl.content)} bytes)")
+                    logger.warning(f"[AUDIO] Descarga S3 falló: {dl.status_code} ({len(dl.content)} bytes)")
         except Exception as e:
             logger.warning(f"[AUDIO] GraphQL apiViewer.file error: {e}")
 
