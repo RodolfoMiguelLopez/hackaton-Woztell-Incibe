@@ -42,7 +42,7 @@ async def _download_by_file_id(file_id: str) -> bytes | None:
                     logger.warning(f"[AUDIO] REST {url} error: {e}")
 
         # 2. GraphQL via apiViewer (estructura correcta según schema de Woztell)
-        gql_query = '{ apiViewer { file(fileId: "%s") { url originalUrl } } }' % file_id
+        gql_query = '{ apiViewer { file(fileId: "%s") { url } } }' % file_id
         try:
             resp = await client.post(
                 "https://open.api.woztell.com/v3",
@@ -52,7 +52,7 @@ async def _download_by_file_id(file_id: str) -> bytes | None:
             data = resp.json()
             logger.info(f"[AUDIO] GraphQL apiViewer.file → {data}")
             file_node = (data.get("data", {}).get("apiViewer", {}) or {}).get("file") or {}
-            file_url = file_node.get("url") or file_node.get("originalUrl")
+            file_url = file_node.get("url")
             if file_url:
                 dl = await client.get(file_url, headers=headers)
                 if dl.status_code == 200 and len(dl.content) > 100:
