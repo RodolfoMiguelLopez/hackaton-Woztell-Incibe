@@ -8,9 +8,9 @@ Desarrollado como MVP en el contexto de un hackathon. Integra WhatsApp como cana
 
 ## Demo en vivo
 
-<video src="video/demo.mp4" controls width="100%"></video>
+![Demo del asistente](video/demo.gif)
 
-> Si el video no se reproduce directamente, [haz clic aquí para verlo](video/demo.mp4).
+> Demo completa en video: [demo.mp4](video/demo.mp4)
 
 ---
 
