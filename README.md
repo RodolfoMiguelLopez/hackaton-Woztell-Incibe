@@ -273,6 +273,6 @@ Conexión con otros usuarios de la zona que quieren hacer la misma actividad, co
 | **Rebeca Castillo** | [linkedin.com/in/rebecacastillodragone](https://www.linkedin.com/in/rebecacastillodragone) |
 | **Jorge Escobar** | [linkedin.com/in/jorge-a-escobar-g-590241112](https://www.linkedin.com/in/jorge-a-escobar-g-590241112) |
 | **Jazmín Ríos** | [linkedin.com/in/jasminrios](https://www.linkedin.com/in/jasminrios/) |
-| **Ingrid** | [linkedin.com/in/ingrid-salvador-maldonado](https://www.linkedin.com/in/ingrid-salvador-maldonado/) |
+| **Ingrid Maldonado** | [linkedin.com/in/ingrid-salvador-maldonado](https://www.linkedin.com/in/ingrid-salvador-maldonado/) |
 
 </div>
