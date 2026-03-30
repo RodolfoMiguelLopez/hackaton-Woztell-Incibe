@@ -54,15 +54,15 @@ pytest-asyncio
 
 ```python
 # config.py
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = "sk-proj-..."
 OPENAI_MODEL = "gpt-4o-mini"
 
-WOZTELL_ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJBUEkiLCJhcHAiOiI2OTgxZTQ2NWQxMTYyZDU2NmQzNTgyNDEiLCJhY2wiOlsiYXBpOmFkbWluIl0sImp0aSI6IjMwMDY2YmUwLTRlYjUtNTE4OS1hMDk3LWEzNDVkMzVhYjYyZSIsImlzcyI6IjY5ODFlNDM2MjQ4NzEyZWQwMzcxODY4ZCIsImlhdCI6MTc3Mjg5ODc2MTg1NSwiZXhwIjoxNzc0NzEzMDY5MTQ0fQ.LRbGNng-S_5W0yBIdhOpKl8Hvejs-yMrwfUfSwuPCnA"
-WOZTELL_CHANNEL_ID = "69845cf3e2606f35bb7d9547"
+WOZTELL_ACCESS_TOKEN = "eyJ..."
+WOZTELL_CHANNEL_ID = "your-channel-id"
 WOZTELL_BOT_API_URL = "https://bot.api.woztell.com/sendResponses"
 
-TELEFONO_USUARIO = "34623040432"
-TELEFONO_FAMILIAR = "34669295504"
+TELEFONO_USUARIO = "34XXXXXXXXX"
+TELEFONO_FAMILIAR = "34YYYYYYYYY"
 NOMBRE_USUARIO = "Antonio"
 NOMBRE_FAMILIAR = "María"
 
@@ -362,7 +362,7 @@ import httpx
 from unittest.mock import AsyncMock, patch, MagicMock
 from woztell import send_text, send_reply_buttons, send_message
 
-PHONE = "34623040432"
+PHONE = "34XXXXXXXXX"
 
 @pytest.mark.asyncio
 async def test_send_message_llama_a_woztell():

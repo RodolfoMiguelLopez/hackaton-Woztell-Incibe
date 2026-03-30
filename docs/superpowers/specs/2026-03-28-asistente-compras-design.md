@@ -43,7 +43,7 @@ WhatsApp → Woztell → POST /webhook ←── ngrok ──← FastAPI (puerto
 POST /make/trigger
 {
   "event": "PURCHASE_INTENT",        // PURCHASE_INTENT | CONFIRM | CANCEL
-  "phone": "34623040432",            // teléfono del usuario
+  "phone": "34XXXXXXXXX",            // teléfono del usuario
   "lista": [                         // opcional, solo en PURCHASE_INTENT
     {"nombre": "Leche", "cantidad": 2, "precio": 0.89, "categoria": "Lácteos"}
   ]
@@ -121,8 +121,8 @@ OPENAI_MODEL = "gpt-4o-mini"         # modelo a usar
 WOZTELL_ACCESS_TOKEN = "eyJ..."      # token JWT de Woztell Bot API
 WOZTELL_CHANNEL_ID = "69845cf3e2606f35bb7d9547"
 WOZTELL_BOT_API_URL = "https://bot.api.woztell.com/sendResponses"
-TELEFONO_USUARIO = "34623040432"     # teléfono del usuario (Antonio)
-TELEFONO_FAMILIAR = "34669295504"    # teléfono del familiar (María) — fijo, hardcodeado
+TELEFONO_USUARIO = "34XXXXXXXXX"     # teléfono del usuario (Antonio)
+TELEFONO_FAMILIAR = "34YYYYYYYYY"    # teléfono del familiar (María) — fijo, hardcodeado
 NOMBRE_USUARIO = "Antonio"
 NOMBRE_FAMILIAR = "María"
 USE_MOCK_AI = False                  # True = usa mock sin llamar a OpenAI
@@ -413,12 +413,12 @@ Formato: `[ESTADO] → [ACCIÓN] → [RESULTADO] (phone: XXXXX)`
 
 Ejemplos:
 ```
-[IDLE] → detect_intent("quiero hacer la compra") → PURCHASE_INTENT (phone: 34623040432)
-[IDLE] → generate_shopping_list() → 14 productos, total 27.31€ (phone: 34623040432)
-[IDLE] → send_reply_buttons() → ok (phone: 34623040432)
-[AWAITING_CONFIRMATION] → CONFIRMAR_COMPRA recibido (phone: 34623040432)
-[AWAITING_CONFIRMATION] → send_text(usuario) → ok (phone: 34623040432)
-[AWAITING_CONFIRMATION] → send_text(familiar) → ok (phone: 34623040432)
+[IDLE] → detect_intent("quiero hacer la compra") → PURCHASE_INTENT (phone: 34XXXXXXXXX)
+[IDLE] → generate_shopping_list() → 14 productos, total 27.31€ (phone: 34XXXXXXXXX)
+[IDLE] → send_reply_buttons() → ok (phone: 34XXXXXXXXX)
+[AWAITING_CONFIRMATION] → CONFIRMAR_COMPRA recibido (phone: 34XXXXXXXXX)
+[AWAITING_CONFIRMATION] → send_text(usuario) → ok (phone: 34XXXXXXXXX)
+[AWAITING_CONFIRMATION] → send_text(familiar) → ok (phone: 34XXXXXXXXX)
 ```
 
 ---
@@ -467,7 +467,7 @@ hackathon-asistente/
 
 1. Usuario envía "quiero hacer la compra" por texto **o por audio de voz** → el audio se transcribe automáticamente y el sistema responde con la lista y 3 botones (Confirmar / Modificar / Cancelar)
 2. Usuario pulsa "✅ Confirmar" → recibe mensaje de confirmación con fecha del día siguiente (formato "martes 29 de marzo") y franja horaria 10:00-12:00
-3. Familiar (34669295504) recibe notificación automática en el mismo momento que el usuario confirma, sin intervención manual
+3. Familiar (34YYYYYYYYY) recibe notificación automática en el mismo momento que el usuario confirma, sin intervención manual
 4. Usuario pulsa "✏️ Modificar" → puede enviar texto libre ("sin yogures", "añade más leche") → recibe nueva lista actualizada con botones
 5. Usuario pulsa "❌ Cancelar" → recibe mensaje amable y el sistema vuelve a IDLE
 6. Consola muestra logs legibles con formato `[ESTADO] → [ACCIÓN] → [RESULTADO]` para cada paso del flujo

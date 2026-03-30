@@ -75,6 +75,6 @@ async def test_webhook_sin_phone_retorna_200():
 
 async def test_make_trigger_retorna_stub():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        resp = await client.post("/make/trigger", json={"event": "PURCHASE_INTENT", "phone": "34623040432"})
+        resp = await client.post("/make/trigger", json={"event": "PURCHASE_INTENT", "phone": "34XXXXXXXXX"})
     assert resp.status_code == 200
     assert resp.json()["ok"] is True

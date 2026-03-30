@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from woztell import send_text, send_message
 
-PHONE = "34623040432"
+PHONE = "34XXXXXXXXX"
 
 
 async def test_send_message_llama_a_woztell():
