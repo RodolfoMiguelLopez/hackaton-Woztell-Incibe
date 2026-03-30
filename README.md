@@ -8,9 +8,11 @@ Desarrollado como MVP en el contexto de un hackathon. Integra WhatsApp como cana
 
 ## Demo en vivo
 
-![Demo del asistente](video/demo.gif)
-
-> Demo completa en video: [demo.mp4](video/demo.mp4)
+<div align="center">
+  <img src="video/demo.gif" alt="Demo del asistente" width="420">
+  <br><br>
+  <em>Demo completa en video: <a href="video/demo.mp4">demo.mp4</a></em>
+</div>
 
 ---
 
@@ -50,6 +52,49 @@ Al confirmar cualquier actividad, el familiar de confianza recibe un aviso discr
 ### 🎙️ Soporte completo de voz
 
 Cualquier interacción puede hacerse por audio de voz. El bot transcribe automáticamente con OpenAI Whisper y procesa el mensaje como texto.
+
+---
+
+## Inteligencia Artificial — cómo y dónde se usa
+
+La IA no es solo un componente auxiliar: es el núcleo que permite que la experiencia sea completamente natural. El usuario **nunca tiene que aprender comandos ni navegar menús** para las acciones principales.
+
+### 🎙️ Transcripción de voz — OpenAI Whisper
+
+Cada mensaje de audio enviado por WhatsApp se transcribe en tiempo real antes de procesarse. Esto permite que el usuario hable con naturalidad, con acento, pausas o errores de pronunciación, y el sistema lo entiende igual.
+
+### 🧠 Detección de intención — GPT-4o-mini
+
+Cuando el usuario escribe o dice algo en estado libre, el modelo clasifica automáticamente la intención:
+
+```
+"Quiero hacer la compra"        → PURCHASE_INTENT
+"Necesito pedir algunas cosas"  → PURCHASE_INTENT
+"Hola buenas"                   → UNKNOWN
+```
+
+No hay un menú de comandos que memorizar. El usuario habla como lo haría con una persona y el sistema interpreta qué quiere hacer.
+
+### 🛒 Generación de lista personalizada — GPT-4o-mini
+
+Al detectar intención de compra, el modelo genera automáticamente la lista de la semana combinando:
+- La lista habitual del usuario (sus productos frecuentes con cantidades y precios)
+- Lo que ha dicho en el mensaje (puede pedir algo concreto)
+
+El resultado es una lista formateada por categorías con precios y total estimado, lista para confirmar.
+
+### ✏️ Modificación por lenguaje natural — GPT-4o-mini
+
+Esta es la capacidad más relevante para la autonomía del usuario: **no hay formularios ni menús de edición**. El usuario simplemente dice lo que quiere cambiar:
+
+```
+"Sin yogures"
+"Añade dos bricks de leche más"
+"Quita el pollo y pon merluza"
+"Que sean plátanos de Canarias"
+```
+
+El modelo reescribe la lista completa aplicando los cambios indicados, manteniendo el resto intacto. El usuario puede repetir este ciclo tantas veces como quiera antes de confirmar.
 
 ---
 
@@ -209,3 +254,25 @@ Acompañamiento paso a paso por metro o autobús vía WhatsApp: *"Sal en la pró
 
 ### 👥 Compañía espontánea
 Conexión con otros usuarios de la zona que quieren hacer la misma actividad, combinando autonomía con reducción de la soledad.
+
+---
+
+## Equipo
+
+<div align="center">
+  <img src="img/equipo.jpg" alt="Equipo del hackathon" width="600">
+</div>
+
+<br>
+
+<div align="center">
+
+| Participante | LinkedIn |
+|:---:|:---:|
+| **Rodolfo López** | [linkedin.com/in/rodolfomiguel](https://www.linkedin.com/in/rodolfomiguel/) |
+| **Rebeca Castillo** | [linkedin.com/in/rebecacastillodragone](https://www.linkedin.com/in/rebecacastillodragone) |
+| **Jorge Escobar** | [linkedin.com/in/jorge-a-escobar-g-590241112](https://www.linkedin.com/in/jorge-a-escobar-g-590241112) |
+| **Jazmín Ríos** | — |
+| **Ingrid** | — |
+
+</div>
