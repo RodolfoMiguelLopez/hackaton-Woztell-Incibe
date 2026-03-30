@@ -23,7 +23,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Asistente de Compras WhatsApp")
-app.mount("/img", StaticFiles(directory="img"), name="img")
+
+import os
+if os.path.isdir("img"):
+    app.mount("/img", StaticFiles(directory="img"), name="img")
+else:
+    logger.warning("[STARTUP] Directorio 'img' no encontrado — imágenes estáticas no disponibles")
 
 # Almacena los últimos 10 payloads para debug
 _debug_payloads: list[dict] = []
