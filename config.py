@@ -1,17 +1,19 @@
-OPENAI_API_KEY = "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"
+import os
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL = "gpt-4o-mini"
 
-WOZTELL_ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJBUEkiLCJhcHAiOiI2OTgxZTQ2NWQxMTYyZDU2NmQzNTgyNDEiLCJhY2wiOlsiYXBpOmFkbWluIl0sImp0aSI6IjMwMDY2YmUwLTRlYjUtNTE4OS1hMDk3LWEzNDVkMzVhYjYyZSIsImlzcyI6IjY5ODFlNDM2MjQ4NzEyZWQwMzcxODY4ZCIsImlhdCI6MTc3Mjg5ODc2MTg1NSwiZXhwIjoxNzc0NzEzMDY5MTQ0fQ.LRbGNng-S_5W0yBIdhOpKl8Hvejs-yMrwfUfSwuPCnA"
-WOZTELL_CHANNEL_ID = "69845cf3e2606f35bb7d9547"
+WOZTELL_ACCESS_TOKEN = os.getenv("WOZTELL_ACCESS_TOKEN", "")
+WOZTELL_CHANNEL_ID = os.getenv("WOZTELL_CHANNEL_ID", "")
 WOZTELL_BOT_API_URL = "https://bot.api.woztell.com/sendResponses"
 
-TELEFONO_USUARIO = "34623040432"
-TELEFONO_FAMILIAR = "34669295504"
-NOMBRE_USUARIO = "Antonio"
-NOMBRE_FAMILIAR = "María"
+TELEFONO_USUARIO = os.getenv("TELEFONO_USUARIO", "")
+TELEFONO_FAMILIAR = os.getenv("TELEFONO_FAMILIAR", "")
+NOMBRE_USUARIO = os.getenv("NOMBRE_USUARIO", "Antonio")
+NOMBRE_FAMILIAR = os.getenv("NOMBRE_FAMILIAR", "María")
 
-USE_MOCK_AI = False
+USE_MOCK_AI = os.getenv("USE_MOCK_AI", "false").lower() == "true"
 WOZTELL_RETRY_DELAY_SECONDS = 1
-PORT = 8000
+PORT = int(os.getenv("PORT", "8000"))
 
-BASE_URL = "https://hack-production-435a.up.railway.app"
+BASE_URL = os.getenv("BASE_URL", "https://hack-production-435a.up.railway.app")
